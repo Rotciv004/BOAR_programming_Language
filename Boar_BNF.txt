@@ -1,0 +1,184 @@
+// ## BOAR BNF Grammar
+
+<program>        ::= { <statement> }
+<statement>      ::= <declare_stmt> ";"
+                   | <assign_stmt> ";"
+                   | <when_stmt>
+                   | <repeat_stmt>
+                   | <show_stmt> ";"
+                   | <task_def>
+                   | <give_stmt> ";"
+                   | <call_stmt> ";"
+                   | <release_stmt> ";"
+
+// Definitions
+<declare_stmt>   ::= <type> IDENTIFIER [ "<-" <expr> ]
+<assign_stmt>    ::= IDENTIFIER "<-" <expr>
+<task_def>       ::= "task" <type> IDENTIFIER "(" [ <param_list> ] ")" "{" { <statement> } "}"
+<param_list>     ::= <type> IDENTIFIER { "," <type> IDENTIFIER }
+
+// Control Flow & I/O
+<when_stmt>      ::= "when" "(" <expr> ")" "do" "{" { <statement> } "}" [ "other" "{" { <statement> } "}" ]
+<repeat_stmt>    ::= "repeat" "(" <expr> ")" "{" { <statement> } "}"
+<show_stmt>      ::= "show" "(" <expr> ")"
+<give_stmt>      ::= "give" [ <expr> ]
+<call_stmt>      ::= IDENTIFIER "(" [ <expr_list> ] ")"
+
+// Memory Management
+<release_stmt>   ::= "release" "(" <expr> ")"
+
+// Types
+<type>           ::= "numa" | "real" | "flag" | "text" | "vector" | <type> "ref"
+
+// Expressions
+<expr_list>      ::= <expr> { "," <expr> }
+<expr>           ::= <logic_or>
+<logic_or>       ::= <logic_and> { "or" <logic_and> }
+<logic_and>      ::= <equality> { "and" <equality> }
+<equality>       ::= <comparison> { ("==" | "!=") <comparison> }
+<comparison>     ::= <term> { ("<" | ">" | "<=" | ">=") <term> }
+<term>           ::= <factor> { ("+" | "-") <factor> }
+<factor>         ::= <unary> { ("*" | "/" | "%") <unary> }
+<unary>          ::= ["not" | "-"] <power>
+<power>          ::= <primary> { "^" <unary> }
+
+// Primitives and Primaries
+<primary>        ::= IDENTIFIER
+                   | NUM_LITERAL
+                   | REAL_LITERAL
+                   | TEXT_LITERAL
+                   | FLAG_LITERAL
+                   | "(" <expr> ")"
+                   | <call_stmt>
+                   | <vector_literal>
+                   | <vector_access>
+                   | "locate" "(" IDENTIFIER ")"  // Address-of operator
+                   | "at" "(" <expr> ")"          // Dereference operator
+                   | "claim" "(" <expr> ")"       // Memory allocation
+
+<vector_literal> ::= "[" [ <expr_list> ] "]"
+<vector_access>  ::= IDENTIFIER "[" <expr> "]"
+
+
+
+============================================================
+   Semantic Specification Document - The Boar Language
+============================================================
+
+This document defines the semantic (behavioral) rules for the Boar programming language, aligned with the principles of the C language.
+
+---
+### 1. Scoping
+---
+
+The Boar language uses **block-level scope**, similar to C.
+
+- **Definition:** A variable declared inside a pair of curly braces `{...}` (in a `task`, `when`, `other`, or `repeat` block) is visible and accessible **only** within that block and its nested (inner) blocks.
+- **Lifetime:** Memory for a local variable is allocated upon entering the block and is automatically deallocated upon exiting the block.
+
+**Example:**
+task numa test_scope() {
+    numa x <- 10; // Visible throughout the entire function
+
+    when (x == 10) do {
+        numa y <- 20; // Visible ONLY inside this 'when' block
+        x <- x + y;   // Correct: x and y are visible here
+    }
+
+    // Compilation Error! The variable 'y' is not defined in this scope.
+    // show(y); 
+    
+    give x; // Correct: x is visible
+}
+
+
+---
+### 2. Manual Memory Management
+---
+
+Boar implements a manual memory management model, similar to C, using the `claim` and `release` functions. The programmer is responsible for allocating and deallocating memory from the heap.
+
+- **`claim(size)` (Memory Allocation)**
+  - **C Equivalent:** `malloc(size)`
+  - **Behavior:** Allocates a block of memory of `size` bytes on the heap and returns a reference (a pointer) to the beginning of that block. The returned type is a generic reference, which should be assigned to a variable of a specific `ref` type (e.g., `numa ref`).
+  - **Example:** `numa ref ptr <- claim(4);` // Allocates 4 bytes for a 'numa'
+
+- **`release(pointer)` (Memory Deallocation)**
+  - **C Equivalent:** `free(pointer)`
+  - **Behavior:** Deallocates the block of memory from the heap indicated by the `pointer`. The `pointer` must be a reference previously obtained through a call to `claim`. Failure to follow this rule leads to undefined behavior.
+
+**Example Usage:**
+// Allocate memory for an integer
+numa ref n_ptr <- claim(4); 
+
+// Store a value at that address using 'at' (see section 4)
+at(n_ptr) <- 123;
+show(at(n_ptr)); // Displays 123
+
+// Deallocate the memory to prevent memory leaks
+release(n_ptr);
+
+
+---
+### 3. Type System and Conversions
+---
+
+Boar follows the rules of **type promotion** from C for arithmetic operations.
+
+- **Rule:** When an operation is performed between two different numeric types, the "smaller" type is promoted to the "larger" type before the calculation is performed. The result will have the "larger" type.
+  - `numa` is "smaller" than `real`.
+- **Examples:**
+  - `numa n <- 5;`
+  - `real r <- 2.5;`
+  - `real result <- n + r;` // n is promoted to 5.0 (real), the result is 7.5 (real)
+
+- **Truncation on Assignment:** When assigning a `real` value to a `numa` variable, the fractional part is discarded (truncated), just as in C.
+  - `numa integer_part <- 7.9;` // integer_part will hold the value 7
+
+
+---
+### 4. References and Address Operators (`locate` and `at`)
+---
+
+Boar uses the `ref` type to work with memory addresses (pointers). The `locate` and `at` constructs are used to manipulate these references.
+
+- **`locate(variable)` (Address-of Operator)**
+  - **C Equivalent:** `&variable`
+  - **Behavior:** Returns the memory address of the `variable`. The result is a reference and must be stored in a variable of a corresponding `ref` type.
+  - **Example:**
+    - `numa my_var <- 50;`
+    - `numa ref ptr_to_my_var <- locate(my_var);` // ptr_to_my_var now holds the address of my_var
+
+- **`at(expression)` (Dereference Operator)**
+  - **C Equivalent:** `*expression`
+  - **Behavior:** Accesses (reads or writes) the value stored at the memory address specified by the `expression`. The expression must evaluate to a valid reference.
+  - **Example:**
+    - `show(at(ptr_to_my_var));` // Reads and displays the value 50
+    - `at(ptr_to_my_var) <- 100;`  // Writes a new value to that address. my_var is now 100.
+
+
+---
+### 5. The `vector` Data Type
+---
+
+In Boar, a `vector` is treated as a **static C-style array**.
+
+- **Definition:** A `vector` is a collection of elements of the same type, stored in a contiguous block of memory.
+- **Size Management:**
+  - A vector's size is fixed at the time of declaration and cannot be changed afterward.
+  - The language does **not** automatically store the vector's size. The programmer is responsible for managing the size (for example, by storing it in a separate variable).
+- **Element Access:** Is done using 0-based indexing (the first element is at index 0).
+- **Memory Safety (Bounds Checking):** The language does **not** check if an index is within the bounds of the vector. Accessing an out-of-bounds index (e.g., `my_vector[10]` for a 5-element vector) results in undefined behavior, just as in C.
+
+**Example:**
+numa vector_size <- 5;
+vector v <- [10, 20, 30, 40, 50];
+numa i <- 0;
+numa sum <- 0;
+
+// The programmer must use 'vector_size' to iterate correctly
+repeat (i < vector_size) {
+    sum <- sum + v[i];
+    i <- i + 1;
+}
+show(sum); // Displays 150

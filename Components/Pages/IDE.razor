@@ -1,0 +1,107 @@
+@page "/"
+@rendermode InteractiveServer
+@inject CompilerService Compiler
+
+<h1>Boar IDE</h1>
+
+<div class="row">
+	<div class="col-12 col-lg-6 mb-3">
+		<label for="editor" class="form-label">Source Code</label>
+		<textarea id="editor" class="form-control" style="min-height: 380px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;"
+		          @bind="sourceCode"></textarea>
+		<div class="mt-2 d-flex gap-2">
+			<button class="btn btn-primary" @onclick="HandleParse">Parse</button>
+			<button class="btn btn-secondary" @onclick="LoadSample">Load Sample</button>
+		</div>
+	</div>
+	<div class="col-12 col-lg-6">
+		@if (output is null)
+		{
+			<div class="text-muted">Click Parse to see outputs.</div>
+		}
+		else
+		{
+			<div class="mb-3">
+				<h3 class="h5">PIF (Tokens)</h3>
+				@if (output.PifOutput.Count == 0)
+				{
+					<div class="text-muted">No tokens.</div>
+				}
+				else
+				{
+					<pre class="p-2 border rounded-2" style="max-height: 180px; overflow:auto;">@string.Join("\n", output.PifOutput)</pre>
+				}
+			</div>
+			<div class="mb-3">
+				<h3 class="h5">Productions</h3>
+				@if (output.ProductionString.Count == 0)
+				{
+					<div class="text-muted">No productions.</div>
+				}
+				else
+				{
+					<pre class="p-2 border rounded-2" style="max-height: 220px; overflow:auto;">@string.Join("\n", output.ProductionString)</pre>
+				}
+			</div>
+			<div class="mb-3">
+				<h3 class="h5">Syntax Errors</h3>
+				@if (output.Errors.Count == 0)
+				{
+					<div class="alert alert-success mb-0">Success: No syntax errors!</div>
+				}
+				else
+				{
+					<pre class="p-2 border rounded-2 bg-light text-danger" style="max-height: 180px; overflow:auto;">@string.Join("\n", output.Errors)</pre>
+				}
+			</div>
+		}
+	</div>
+</div>
+
+@code {
+	private string sourceCode = "// Write Boar code here...\n";
+	private CompilerOutput? output;
+
+	private Task HandleParse()
+	{
+		output = Compiler.Parse(sourceCode);
+		return Task.CompletedTask;
+	}
+
+	private Task LoadSample()
+	{
+		sourceCode = """
+		task numa add(numa a, numa b) {
+		    numa sum <- a + b;
+		    give sum;
+		}
+
+		task numa main() {
+		    show(add(3, 4));
+		    numa x <- 5;
+		    numa ref p <- locate(x);
+		    at(p) <- 10;
+		    show(x);
+		    numa ref buf <- claim(4);
+		    at(buf) <- 42;
+		    show(at(buf));
+		    release(buf);
+		    vector v <- [1, 2, 3];
+		    numa i <- 0;
+		    numa s <- 0;
+		    repeat (i < 3) {
+		        s <- s + v[i];
+		        i <- i + 1;
+		    }
+		    when (s > 5) do {
+		        show("big");
+		    } other {
+		        show("small");
+		    }
+		    give 0;
+		}
+		""";
+		return Task.CompletedTask;
+	}
+}
+

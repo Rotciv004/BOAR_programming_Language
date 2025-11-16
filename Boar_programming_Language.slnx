@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Boar_programming_Language.csproj" />
+  <Project Path="BoarCompiler\BoarCompiler.csproj" />
+</Solution>
