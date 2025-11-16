@@ -1,0 +1,61 @@
+# .NET / Visual Studio / Blazor
+
+# Build outputs
+bin/
+obj/
+**/bin/
+**/obj/
+
+# VS/VSCode local settings
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.ide
+*.cache
+
+# Test results / coverage
+TestResult*/
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+**/packages/*
+*.nuget.props
+*.nuget.targets
+
+# Logs
+*.log
+logs/
+
+# Publish artifacts
+publish/
+**/publish/
+wwwroot/dist/
+
+# ASP.NET scaffolding
+ScaffoldingReadMe.txt
+
+# Generated files (ANTLR)
+**/obj/**/Boar*.cs
+**/obj/**/antlr4*.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Rider / ReSharper
+.idea/
+_ReSharper.Caches/
+
+# Additional project-specific ignores
+*.csproj.user
+*.slnx.user
+
+
