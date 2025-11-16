@@ -7,8 +7,18 @@
 <div class="row">
 	<div class="col-12 col-lg-6 mb-3">
 		<label for="editor" class="form-label">Source Code</label>
-		<textarea id="editor" class="form-control" style="min-height: 380px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;"
-		          @bind="sourceCode"></textarea>
+		<div class="editor-container">
+			<div class="editor-gutter" @ref="_gutterRef">
+				@for (var i = 1; i <= LineCount; i++)
+				{
+					<div class="line">@i</div>
+				}
+			</div>
+			<textarea id="editor" class="editor-textarea"
+			          @bind="sourceCode"
+			          @onscroll="OnScroll"
+			          @ref="_editorRef"></textarea>
+		</div>
 		<div class="mt-2 d-flex gap-2">
 			<button class="btn btn-primary" @onclick="HandleParse">Parse</button>
 			<button class="btn btn-secondary" @onclick="LoadSample">Load Sample</button>
@@ -22,36 +32,22 @@
 		else
 		{
 			<div class="mb-3">
-				<h3 class="h5">PIF (Tokens)</h3>
-				@if (output.PifOutput.Count == 0)
-				{
-					<div class="text-muted">No tokens.</div>
-				}
-				else
-				{
-					<pre class="p-2 border rounded-2" style="max-height: 180px; overflow:auto;">@string.Join("\n", output.PifOutput)</pre>
-				}
+				<h3 class="h6">PIF (Tokens)</h3>
+				<pre class="p-2 border rounded-2 bg-dark text-light" style="max-height: 180px; overflow:auto;">@string.Join("\n", output.PifOutput)</pre>
 			</div>
 			<div class="mb-3">
-				<h3 class="h5">Productions</h3>
-				@if (output.ProductionString.Count == 0)
-				{
-					<div class="text-muted">No productions.</div>
-				}
-				else
-				{
-					<pre class="p-2 border rounded-2" style="max-height: 220px; overflow:auto;">@string.Join("\n", output.ProductionString)</pre>
-				}
+				<h3 class="h6">Productions</h3>
+				<pre class="p-2 border rounded-2 bg-dark text-light" style="max-height: 220px; overflow:auto;">@string.Join("\n", output.ProductionString)</pre>
 			</div>
 			<div class="mb-3">
-				<h3 class="h5">Syntax Errors</h3>
+				<h3 class="h6">Syntax Errors</h3>
 				@if (output.Errors.Count == 0)
 				{
 					<div class="alert alert-success mb-0">Success: No syntax errors!</div>
 				}
 				else
 				{
-					<pre class="p-2 border rounded-2 bg-light text-danger" style="max-height: 180px; overflow:auto;">@string.Join("\n", output.Errors)</pre>
+					<pre class="p-2 border rounded-2 bg-dark text-warning" style="max-height: 180px; overflow:auto;">@string.Join("\n", output.Errors)</pre>
 				}
 			</div>
 		}
@@ -59,13 +55,24 @@
 </div>
 
 @code {
+	[Inject] private IJSRuntime JS { get; set; } = default!;
+
 	private string sourceCode = "// Write Boar code here...\n";
 	private CompilerOutput? output;
+	private ElementReference _editorRef;
+	private ElementReference _gutterRef;
+
+	private int LineCount => Math.Max(1, (sourceCode?.Split('\n').Length ?? 1));
 
 	private Task HandleParse()
 	{
 		output = Compiler.Parse(sourceCode);
 		return Task.CompletedTask;
+	}
+
+	private async Task OnScroll()
+	{
+		await JS.InvokeVoidAsync("boarEditor.syncScroll", _gutterRef, _editorRef);
 	}
 
 	private Task LoadSample()
