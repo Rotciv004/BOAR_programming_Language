@@ -39,6 +39,35 @@
 				<h3 class="h6">Productions</h3>
 				<pre class="p-2 border rounded-2 bg-dark text-light" style="max-height: 220px; overflow:auto;">@string.Join("\n", output.ProductionString)</pre>
 			</div>
+			@if (output.ParseTree.Count > 0)
+			{
+				<div class="mb-3">
+					<h3 class="h6">Parse Tree (Father-Sibling)</h3>
+					<div class="table-responsive border rounded-2" style="max-height: 300px; overflow: auto;">
+						<table class="table table-sm table-dark table-striped mb-0">
+							<thead>
+							<tr>
+								<th scope="col">Index</th>
+								<th scope="col">Info</th>
+								<th scope="col">Parent</th>
+								<th scope="col">Right Sibling</th>
+							</tr>
+							</thead>
+							<tbody>
+							@foreach (var node in output.ParseTree)
+							{
+								<tr>
+									<td>@node.Index</td>
+									<td>@node.Info</td>
+									<td>@(node.Parent?.ToString() ?? "-")</td>
+									<td>@(node.RightSibling?.ToString() ?? "-")</td>
+								</tr>
+							}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
 			<div class="mb-3">
 				<h3 class="h6">Syntax Errors</h3>
 				@if (output.Errors.Count == 0)

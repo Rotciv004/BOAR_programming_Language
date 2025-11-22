@@ -1,0 +1,47 @@
+<program> ::= <statement_list>
+<statement_list> ::= <statement> <statement_list> | ε
+<statement> ::= <declare_stmt> ";" | IDENTIFIER <ident_stmt_tail> | "at" "(" <expr> ")" "<-" <expr> ";" | <when_stmt> | <repeat_stmt> | <show_stmt> ";" | <task_def> | <give_stmt> ";" | <release_stmt> ";"
+<declare_stmt> ::= <type> IDENTIFIER <declare_stmt_tail>
+<declare_stmt_tail> ::= "<-" <expr> | ε
+<task_def> ::= "task" <type> IDENTIFIER "(" <opt_param_list> ")" "{" <statement_block> "}"
+<opt_param_list> ::= <param_list> | ε
+<param_list> ::= <type> IDENTIFIER <param_list_tail>
+<param_list_tail> ::= "," <type> IDENTIFIER <param_list_tail> | ε
+<when_stmt> ::= "when" "(" <expr> ")" "do" "{" <statement_block> "}" <when_other_tail>
+<when_other_tail> ::= "other" "{" <statement_block> "}" | ε
+<repeat_stmt> ::= "repeat" "(" <expr> ")" "{" <statement_block> "}"
+<show_stmt> ::= "show" "(" <expr> ")"
+<give_stmt> ::= "give" <opt_expr>
+<opt_expr> ::= <expr> | ε
+<call_stmt> ::= IDENTIFIER "(" <opt_expr_list> ")"
+<ident_stmt_tail> ::= <ident_assign_tail> | "(" <opt_expr_list> ")" ";"
+<ident_assign_tail> ::= <vector_index_opt> "<-" <expr> ";"
+<vector_index_opt> ::= "[" <expr> "]" | ε
+<opt_expr_list> ::= <expr_list> | ε
+<release_stmt> ::= "release" "(" <expr> ")"
+<statement_block> ::= <statement> <statement_block> | ε
+<expr_list> ::= <expr> <expr_list_tail>
+<expr_list_tail> ::= "," <expr> <expr_list_tail> | ε
+<type> ::= <base_type> <type_ref_tail>
+<base_type> ::= "numa" | "real" | "flag" | "text" | "vector"
+<type_ref_tail> ::= "ref" <type_ref_tail> | ε
+<expr> ::= <logic_or>
+<logic_or> ::= <logic_and> <logic_or_tail>
+<logic_or_tail> ::= "or" <logic_and> <logic_or_tail> | ε
+<logic_and> ::= <equality> <logic_and_tail>
+<logic_and_tail> ::= "and" <equality> <logic_and_tail> | ε
+<equality> ::= <comparison> <equality_tail>
+<equality_tail> ::= "==" <comparison> <equality_tail> | "!=" <comparison> <equality_tail> | ε
+<comparison> ::= <term> <comparison_tail>
+<comparison_tail> ::= "<" <term> <comparison_tail> | ">" <term> <comparison_tail> | "<=" <term> <comparison_tail> | ">=" <term> <comparison_tail> | ε
+<term> ::= <factor> <term_tail>
+<term_tail> ::= "+" <factor> <term_tail> | "-" <factor> <term_tail> | ε
+<factor> ::= <unary> <factor_tail>
+<factor_tail> ::= "*" <unary> <factor_tail> | "/" <unary> <factor_tail> | "%" <unary> <factor_tail> | ε
+<unary> ::= "not" <unary> | "-" <unary> | <power>
+<power> ::= <primary> <power_opt>
+<power_opt> ::= "^" <unary> | ε
+<primary> ::= IDENTIFIER <primary_id_tail> | NUM_LITERAL | REAL_LITERAL | TEXT_LITERAL | FLAG_LITERAL | "(" <expr> ")" | <vector_literal> | "locate" "(" IDENTIFIER ")" | "at" "(" <expr> ")" | "claim" "(" <expr> ")"
+<primary_id_tail> ::= "(" <opt_expr_list> ")" | "[" <expr> "]" | ε
+<vector_literal> ::= "[" <opt_expr_list> "]"
+

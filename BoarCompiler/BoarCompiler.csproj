@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
@@ -14,6 +15,11 @@
   </ItemGroup>
   <ItemGroup>
     <Antlr4 Include="Grammar\Boar.g4" TargetLanguage="CSharp" Listener="true" Visitor="true" Package="BoarCompiler.Grammar" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="LL1\grammar.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 </Project>
 
